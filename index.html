@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>galanthus - OAuth callback</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+    max-width: 40rem;
+    margin: 2rem auto;
+    padding: 0 1rem;
+    line-height: 1.5;
+  }
+  h1 { margin-top: 0; font-size: 1.4rem; }
+  .panel {
+    border: 1px solid rgba(127,127,127,0.3);
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+    margin: 1rem 0;
+  }
+  .code {
+    font-family: ui-monospace, Consolas, Menlo, monospace;
+    background: rgba(127,127,127,0.1);
+    padding: 0.8rem;
+    border-radius: 4px;
+    word-break: break-all;
+    font-size: 0.95rem;
+    user-select: all;
+  }
+  button {
+    padding: 0.55rem 1.1rem;
+    margin-right: 0.4rem;
+    font-size: 0.95rem;
+    cursor: pointer;
+    border-radius: 4px;
+    border: 1px solid rgba(127,127,127,0.5);
+    background: rgba(127,127,127,0.1);
+    color: inherit;
+  }
+  button:hover { background: rgba(127,127,127,0.2); }
+  .ok { color: #2e7d32; }
+  .err { color: #c62828; }
+  small { opacity: 0.75; }
+</style>
+</head>
+<body>
+<h1>galanthus - OAuth callback</h1>
+<div id="panel" class="panel">
+  <p id="msg">Reading authorization code...</p>
+  <div id="code-box" class="code" hidden></div>
+  <div id="actions" hidden>
+    <button id="copy-btn" type="button">Copy</button>
+    <span id="copy-status" style="margin-left:0.5rem"></span>
+  </div>
+  <p id="next" hidden>Switch back to the terminal where <code>gln</code> is waiting and paste at the <code>code&gt;</code> prompt.</p>
+</div>
+<p><small>This page runs entirely in your browser. No data is sent anywhere. Close this tab once you've pasted the code.</small></p>
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  var code = params.get('code');
+  var state = params.get('state');
+  var err = params.get('error');
+  var errDesc = params.get('error_description');
+  var msg = document.getElementById('msg');
+  var box = document.getElementById('code-box');
+  var actions = document.getElementById('actions');
+  var next = document.getElementById('next');
+  var copyBtn = document.getElementById('copy-btn');
+  var copyStatus = document.getElementById('copy-status');
+
+  if (err) {
+    msg.textContent = 'OAuth error: ' + err + (errDesc ? ' - ' + errDesc : '');
+    msg.className = 'err';
+    return;
+  }
+  if (!code) {
+    msg.textContent = 'No authorization code in the redirect URL. If you did not just click Authorise, this page was opened by mistake.';
+    msg.className = 'err';
+    return;
+  }
+
+  msg.textContent = 'Authorization code captured. Copy it and paste it into the terminal:';
+  msg.className = 'ok';
+  var payload = state ? code + '&state=' + state : code;
+  box.textContent = payload;
+  box.hidden = false;
+  actions.hidden = false;
+  next.hidden = false;
+
+  function flash(text) {
+    copyStatus.textContent = text;
+    setTimeout(function () { copyStatus.textContent = ''; }, 1800);
+  }
+
+  copyBtn.addEventListener('click', function () {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(payload).then(function () {
+        flash('Copied.');
+      }).catch(function () {
+        flash('Copy failed - select the text above and copy manually.');
+      });
+    } else {
+      flash('Clipboard API unavailable - select the text above and copy manually.');
+    }
+  });
+
+  // Best-effort auto-copy on load. Browsers that require a user gesture
+  // will reject this silently; the button is always available as a fallback.
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(payload).catch(function () { /* ignored */ });
+  }
+})();
+</script>
+</body>
+</html>
