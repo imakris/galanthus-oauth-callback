@@ -14,6 +14,8 @@
     line-height: 1.5;
   }
   h1 { margin-top: 0; font-size: 1.4rem; }
+  #action { font-size: 1.05rem; margin-top: 0; }
+  #details small { opacity: 0.7; }
   .panel {
     border: 1px solid rgba(127,127,127,0.3);
     border-radius: 6px;
@@ -49,15 +51,15 @@
 <body>
 <h1 id="title">galanthus</h1>
 <div id="panel" class="panel">
-  <p id="msg">Reading authorization code...</p>
+  <p id="action">Reading authorization code...</p>
   <div id="code-box" class="code" hidden></div>
   <div id="actions" hidden>
     <button id="copy-btn" type="button">Copy</button>
     <span id="copy-status" style="margin-left:0.5rem"></span>
   </div>
-  <p id="next" hidden>Paste in the terminal.</p>
+  <p id="details" hidden><small></small></p>
 </div>
-<p id="footer"><small>No data is sent anywhere. Runs entirely in your browser.</small></p>
+<p id="footer" hidden><small>No data is sent anywhere. Runs entirely in your browser.</small></p>
 <script>
 (function () {
   var params = new URLSearchParams(window.location.search);
@@ -66,42 +68,47 @@
   var err = params.get('error');
   var errDesc = params.get('error_description');
   var title = document.getElementById('title');
-  var msg = document.getElementById('msg');
+  var action = document.getElementById('action');
   var box = document.getElementById('code-box');
   var actions = document.getElementById('actions');
-  var next = document.getElementById('next');
+  var details = document.getElementById('details');
   var copyBtn = document.getElementById('copy-btn');
   var copyStatus = document.getElementById('copy-status');
   var footer = document.getElementById('footer');
 
+  function setDetails(text) {
+    details.querySelector('small').textContent = text;
+    details.hidden = false;
+  }
+
   if (err) {
     title.textContent = 'Authorization failed';
-    msg.textContent = err + (errDesc ? ' - ' + errDesc : '');
-    msg.className = 'err';
-    footer.hidden = true;
+    action.textContent = err + (errDesc ? ' - ' + errDesc : '');
+    action.className = 'err';
+    setDetails('Close this tab and re-run the galanthus auth command.');
     return;
   }
   if (!code) {
     title.textContent = 'Nothing to do';
-    msg.textContent = 'No authorization code in the URL. You can close this tab.';
-    footer.hidden = true;
+    action.textContent = 'You can close this tab.';
+    setDetails('No authorization code in the URL - this page was opened by mistake.');
     return;
   }
 
   // galanthus mints a 32-hex state on every login attempt. A redirect
   // without that state is typically Revolut's "Enable access" activation
-  // hop, which produces a code that will not work at /auth/token. Hide
-  // the code and tell the user to close the tab.
+  // hop, which produces a code that will not work at /auth/token.
   var stateLooksRight = state && /^[a-f0-9]{32}$/.test(state);
   if (!stateLooksRight) {
-    title.textContent = 'Done';
-    msg.textContent = 'You can close this tab.';
-    footer.hidden = true;
+    title.textContent = 'Access enabled';
+    action.textContent = 'You can close this tab.';
+    setDetails('This redirect was the Revolut cert activation, not a galanthus login. Galanthus will open a new tab when it needs you to authorise.');
     return;
   }
 
   title.textContent = 'Copy the code';
-  msg.hidden = true;
+  action.textContent = 'Paste into the galanthus terminal prompt.';
+  footer.hidden = false;
   var payload = code + '&state=' + state;
   box.textContent = payload;
   box.hidden = false;
