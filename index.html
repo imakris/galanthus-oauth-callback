@@ -42,6 +42,7 @@
   button:hover { background: rgba(127,127,127,0.2); }
   .ok { color: #2e7d32; }
   .err { color: #c62828; }
+  .warn { color: #ef6c00; }
   small { opacity: 0.75; }
 </style>
 </head>
@@ -82,9 +83,22 @@
     return;
   }
 
+  // The galanthus CLI always includes a `state` query parameter when it
+  // builds the consent URL. A redirect without `state` (or with a state
+  // that does not look like our 32-hex-char nonce) is almost certainly
+  // Revolut's "Enable access" activation redirect - that code is tied to
+  // a different flow and will be rejected at /auth/token. Tell the user
+  // to close the tab instead of displaying a code that will not work.
+  var stateLooksRight = state && /^[a-f0-9]{32}$/.test(state);
+  if (!stateLooksRight) {
+    msg.textContent = 'This redirect is not from a galanthus login attempt (missing or unexpected state parameter). Most likely you reached this page by clicking "Enable access" on the Revolut cert - that is fine, it activated the cert. Close this tab and return to your terminal; when galanthus asks you to authorise, it will open a new tab with a proper login URL.';
+    msg.className = 'warn';
+    return;
+  }
+
   msg.textContent = 'Authorization code captured. Copy it and paste it into the terminal:';
   msg.className = 'ok';
-  var payload = state ? code + '&state=' + state : code;
+  var payload = code + '&state=' + state;
   box.textContent = payload;
   box.hidden = false;
   actions.hidden = false;
