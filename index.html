@@ -120,12 +120,6 @@
       flash('Clipboard API unavailable - select the text above and copy manually.');
     }
   });
-
-  // Best-effort auto-copy on load. Browsers that require a user gesture
-  // will reject this silently; the button is always available as a fallback.
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(payload).catch(function () { /* ignored */ });
-  }
 })();
 </script>
 </body>
