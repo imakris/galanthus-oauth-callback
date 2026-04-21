@@ -47,7 +47,7 @@
 </style>
 </head>
 <body>
-<h1>galanthus - OAuth callback</h1>
+<h1 id="title">galanthus</h1>
 <div id="panel" class="panel">
   <p id="msg">Reading authorization code...</p>
   <div id="code-box" class="code" hidden></div>
@@ -55,9 +55,9 @@
     <button id="copy-btn" type="button">Copy</button>
     <span id="copy-status" style="margin-left:0.5rem"></span>
   </div>
-  <p id="next" hidden>Switch back to the terminal where <code>gln</code> is waiting and paste at the <code>code&gt;</code> prompt.</p>
+  <p id="next" hidden>Paste in the terminal.</p>
 </div>
-<p><small>This page runs entirely in your browser. No data is sent anywhere. Close this tab once you've pasted the code.</small></p>
+<p id="footer"><small>No data is sent anywhere. Runs entirely in your browser.</small></p>
 <script>
 (function () {
   var params = new URLSearchParams(window.location.search);
@@ -65,39 +65,43 @@
   var state = params.get('state');
   var err = params.get('error');
   var errDesc = params.get('error_description');
+  var title = document.getElementById('title');
   var msg = document.getElementById('msg');
   var box = document.getElementById('code-box');
   var actions = document.getElementById('actions');
   var next = document.getElementById('next');
   var copyBtn = document.getElementById('copy-btn');
   var copyStatus = document.getElementById('copy-status');
+  var footer = document.getElementById('footer');
 
   if (err) {
-    msg.textContent = 'OAuth error: ' + err + (errDesc ? ' - ' + errDesc : '');
+    title.textContent = 'Authorization failed';
+    msg.textContent = err + (errDesc ? ' - ' + errDesc : '');
     msg.className = 'err';
+    footer.hidden = true;
     return;
   }
   if (!code) {
-    msg.textContent = 'No authorization code in the redirect URL. If you did not just click Authorise, this page was opened by mistake.';
-    msg.className = 'err';
+    title.textContent = 'Nothing to do';
+    msg.textContent = 'No authorization code in the URL. You can close this tab.';
+    footer.hidden = true;
     return;
   }
 
-  // The galanthus CLI always includes a `state` query parameter when it
-  // builds the consent URL. A redirect without `state` (or with a state
-  // that does not look like our 32-hex-char nonce) is almost certainly
-  // Revolut's "Enable access" activation redirect - that code is tied to
-  // a different flow and will be rejected at /auth/token. Tell the user
-  // to close the tab instead of displaying a code that will not work.
+  // galanthus mints a 32-hex state on every login attempt. A redirect
+  // without that state is typically Revolut's "Enable access" activation
+  // hop, which produces a code that will not work at /auth/token. Hide
+  // the code and tell the user to close the tab.
   var stateLooksRight = state && /^[a-f0-9]{32}$/.test(state);
   if (!stateLooksRight) {
-    msg.textContent = 'This redirect is not from a galanthus login attempt (missing or unexpected state parameter). Most likely you reached this page by clicking "Enable access" on the Revolut cert - that is fine, it activated the cert. Close this tab and return to your terminal; when galanthus asks you to authorise, it will open a new tab with a proper login URL.';
-    msg.className = 'warn';
+    title.textContent = 'Done';
+    msg.textContent = 'You can close this tab.';
+    footer.hidden = true;
     return;
   }
 
-  msg.textContent = 'Authorization code captured. Copy it and paste it into the terminal:';
-  msg.className = 'ok';
+  title.textContent = 'Copy the code';
+  msg.hidden = true;
   var payload = code + '&state=' + state;
   box.textContent = payload;
   box.hidden = false;
