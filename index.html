@@ -96,13 +96,16 @@
   }
 
   // galanthus mints a 32-hex state on every login attempt. A redirect
-  // without that state is typically Revolut's "Enable access" activation
-  // hop, which produces a code that will not work at /auth/token.
+  // without that state did not come from a galanthus auth attempt. The
+  // most common benign reason is Revolut's "Enable access" activation
+  // hop, but other sources are possible (old bookmark, different tool,
+  // a crafted URL) so we don't claim to know which. Either way the code
+  // here (if any) will not work at /auth/token.
   var stateLooksRight = state && /^[a-f0-9]{32}$/.test(state);
   if (!stateLooksRight) {
-    title.textContent = 'Access enabled';
+    title.textContent = 'Not a galanthus login';
     action.textContent = 'You can close this tab.';
-    setDetails('This redirect was the Revolut cert activation, not a galanthus login. Galanthus will open a new tab when it needs you to authorise.');
+    setDetails('This redirect did not come from a galanthus auth attempt. Nothing has been processed.');
     return;
   }
 
