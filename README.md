@@ -1,7 +1,7 @@
 # galanthus-oauth-callback
 
 A tiny static page used as the OAuth redirect URI target for the
-[galanthus](https://github.com/imakris/snowdrop) CLI.
+galanthus CLI.
 
 When the user clicks **Authorise** on an OAuth provider's consent page,
 the browser is redirected here with `?code=...&state=...` in the query
