@@ -35,7 +35,7 @@ actual page that tells them what to do and puts the code one click away.
 
 ## Hosting
 
-Served via GitHub Pages from `main` branch, root folder.
+Served via GitHub Pages from `master` branch, root folder.
 
 ## License
 
